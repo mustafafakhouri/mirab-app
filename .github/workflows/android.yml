@@ -1,5 +1,10 @@
 name: Build Mi3rab APK
-on: [push, workflow_dispatch]
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -9,7 +14,6 @@ jobs:
         run: |
           base64 -d mirab_src.b64 > mirab_src.tgz
           mkdir -p proj && tar xzf mirab_src.tgz -C proj
-          ls -la proj
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -20,7 +24,16 @@ jobs:
       - name: Build debug APK
         working-directory: proj
         run: gradle assembleDebug --no-daemon --stacktrace
-      - uses: actions/upload-artifact@v4
+      - name: Prepare mirab.apk
+        run: cp proj/app/build/outputs/apk/debug/app-debug.apk mirab.apk
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
         with:
-          name: mirab-debug-apk
-          path: proj/app/build/outputs/apk/debug/app-debug.apk
+          name: mirab-apk
+          path: mirab.apk
+      - name: Publish to Releases
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: Mi3rab latest
+          files: mirab.apk

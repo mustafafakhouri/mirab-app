@@ -5,8 +5,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Extract project
-        run: mkdir -p proj && tar xzf mirab_src.tgz -C proj && ls -la proj
+      - name: Decode and extract project
+        run: |
+          base64 -d mirab_src.b64 > mirab_src.tgz
+          mkdir -p proj && tar xzf mirab_src.tgz -C proj
+          ls -la proj
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

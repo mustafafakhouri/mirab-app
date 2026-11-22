@@ -14,6 +14,29 @@ jobs:
         run: |
           base64 -d mirab_src.b64 > mirab_src.tgz
           mkdir -p proj && tar xzf mirab_src.tgz -C proj
+      - name: Overlay code overrides (app.js, styles.css, MainActivity.kt)
+        run: |
+          set -e
+          ASSETS=proj/app/src/main/assets/assets
+          JAVA=proj/app/src/main/java/com/bethratfikra/mirab
+          if [ -f buildsrc/app.js ]; then cp buildsrc/app.js "$ASSETS/app.js"; echo "overlaid app.js"; fi
+          if [ -f buildsrc/styles.css ]; then cp buildsrc/styles.css "$ASSETS/styles.css"; echo "overlaid styles.css"; fi
+          if [ -f buildsrc/MainActivity.kt ]; then cp buildsrc/MainActivity.kt "$JAVA/MainActivity.kt"; echo "overlaid MainActivity.kt"; fi
+      - name: Fetch Uthmani font (Amiri) into assets
+        run: |
+          set -e
+          FDIR=proj/app/src/main/assets/assets/fonts
+          mkdir -p "$FDIR"
+          dl(){ curl -fsSL --retry 4 --retry-all-errors -o "$2" "$1"; }
+          # primary: jsDelivr (fontsource) ; fallback: unpkg
+          dl "https://cdn.jsdelivr.net/npm/@fontsource/amiri@5/files/amiri-arabic-400-normal.woff2" "$FDIR/amiri-arabic-400-normal.woff2" \
+            || dl "https://unpkg.com/@fontsource/amiri@5/files/amiri-arabic-400-normal.woff2" "$FDIR/amiri-arabic-400-normal.woff2"
+          dl "https://cdn.jsdelivr.net/npm/@fontsource/amiri@5/files/amiri-arabic-700-normal.woff2" "$FDIR/amiri-arabic-700-normal.woff2" \
+            || dl "https://unpkg.com/@fontsource/amiri@5/files/amiri-arabic-700-normal.woff2" "$FDIR/amiri-arabic-700-normal.woff2"
+          sz=$(wc -c < "$FDIR/amiri-arabic-400-normal.woff2")
+          echo "amiri 400 size: $sz bytes"
+          if [ "$sz" -lt 50000 ]; then echo "ERROR: Amiri font download failed/too small"; exit 1; fi
+          ls -la "$FDIR"
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
